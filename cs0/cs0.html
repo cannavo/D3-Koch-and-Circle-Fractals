@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+	<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+	<script>
+	function drawCircles(data,svg){
+		svg.selectAll("*").remove();
+		let circles = svg.selectAll("circle")
+						 .data(data);
+		circles.enter()
+			   .append("circle")
+			   .attr("cx",function(d){return d.cx;})
+			   .attr("cy",function(d){return d.cy;})
+			   .attr("r",function(d){return d.r;})
+			   .style("fill","none")
+			   .style("stroke","black")
+			   .style("stroke-width","1");
+	}
+	function drawLines(data,svg){
+		svg.selectAll("*").remove();
+		let lines = svg.selectAll("path")
+						 .data(data);
+		lines.enter()
+			   .append("path")
+			   .attr("d",function(d){return (d.start+" "+d.end);})
+			   .style("stroke","red")
+			   .style("stroke-width","2");
+	}
+	function draw(){
+		let d1 = document.getElementById("myText").value;
+		let d2 = document.getElementById("myText2").value;
+		if(d1!=="Circle Depth"){
+			drawCircles(circleFractal(250,250,200,d1),d3.select("#drawing_pad"));
+		}
+		if(d2!=="Koch Depth"){
+			drawLines(kochCurve(0,200,500,200,d2),d3.select("#drawing_pad2"));
+		}		
+	}
+	function loadJSON(){
+		d3.json("data.json",function(error,data){
+			svg=d3.select("#drawing_pad");
+			console.log(svg)
+			if(error){console.log(error); return 0;}
+			drawCircles(data["circleFractal"],d3.select("#drawing_pad"));
+			drawLines(data["kochCurve"],d3.select("#drawing_pad2"));
+		});
+	}
+	function circleFractal(start_x,start_y,radius,depth)
+	{
+		return (depth==0) ? [] : 
+		[{type: "circle", cx: start_x, cy: start_y, r: radius, d: depth}]
+		.concat(circleFractal(start_x-(radius/2),start_y,radius/2,depth-1))
+		.concat(circleFractal(start_x+(radius/2),start_y,radius/2,depth-1))
+	}
+	function kochCurve(x_s,y_s,x_e,y_e,depth)
+	{
+		return (depth==0) ? [{type: "path", start: "M "+x_s+","+y_s, end: "L "+x_e+","+y_e}] :
+		kochCurve(x_s,y_s,(x_e-x_s)/3+x_s,(y_e-y_s)/3+y_s,depth-1)
+		.concat(kochCurve((x_e-x_s)/3+x_s,(y_e-y_s)/3+y_s,(x_e-x_s)/2-Math.sqrt(3)*(y_e-y_s)/6+x_s,Math.sqrt(3)*(x_e-x_s)/6+(y_e-y_s)/2+y_s,depth-1))
+		.concat(kochCurve((x_e-x_s)/2-Math.sqrt(3)*(y_e-y_s)/6+x_s,Math.sqrt(3)*(x_e-x_s)/6+(y_e-y_s)/2+y_s,x_e-(x_e-x_s)/3,y_e-(y_e-y_s)/3,depth-1))
+		.concat(kochCurve(x_e-(x_e-x_s)/3,y_e-(y_e-y_s)/3,x_e,y_e,depth-1))	
+	}
+	</script>
+</head>
+<body onLoad="loadJSON()">
+	<svg width="500" height="500" id = "drawing_pad"/>
+	<input type="text" id="myText" value="Circle Depth">
+	<button onclick = "draw()">Draw</button>
+	<input type="text" id="myText2" value="Koch Depth">
+	<svg width="500" height="500" id = "drawing_pad2"/>
+
+</body>
+</html>
